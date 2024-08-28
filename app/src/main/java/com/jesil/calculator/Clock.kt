@@ -8,9 +8,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -28,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.reactivex.Observable
 import io.reactivex.schedulers.Schedulers
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -46,8 +50,10 @@ fun ClockWidget(
 
     val ukTime = remember { mutableStateOf(Time(seconds = 0f, minute = 0f, hour = 0f)) }
     val amsTime = remember { mutableStateOf(Time(seconds = 0f, minute = 0f, hour = 0f)) }
-    val uaeTime = remember { mutableStateOf(Time(seconds = 0f, minute = 0f, hour = 0f))   }
-    val colTime = remember { mutableStateOf(Time(seconds = 0f, minute = 0f, hour = 0f))   }
+    val uaeTime = remember { mutableStateOf(Time(seconds = 0f, minute = 0f, hour = 0f)) }
+    val colTime = remember { mutableStateOf(Time(seconds = 0f, minute = 0f, hour = 0f)) }
+
+    val isNights = remember { mutableStateOf(listOf(false, false, false, false)) }
 
     DisposableEffect(key1 = 0) {
         var ukTimeZone: ZonedDateTime
@@ -91,12 +97,18 @@ fun ClockWidget(
                     minute = colTimeZone.minute.toFloat(),
                     hour = colTimeZone.hour.toFloat()
                 )
+
+                isNights.value = listOf(
+                    isNight("Europe/London"),
+                    isNight("Europe/Amsterdam"),
+                    isNight("Asia/Dubai"),
+                    isNight("America/Bogota")
+                )
             }
         onDispose {
             observable.dispose()
         }
     }
-
 
     Box(
         contentAlignment = Alignment.Center,
@@ -111,28 +123,36 @@ fun ClockWidget(
             modifier = modifier.padding(10.dp)
         ) {
             ClockItem(
+                modifier = Modifier.weight(1f),
                 timeInDigital = ukDigitalTime.value,
                 place = "UK",
                 time = ukTime.value,
+                clockBackgroundColor = if (isNights.value[0]) Color.Black else Color.White,
+                clockHandColor = if (isNights.value[0]) Color.White else Color.Black
             )
             ClockItem(
+                modifier = Modifier.weight(1f),
                 timeInDigital = amsDigitalTime.value,
                 place = "AMS",
                 time = amsTime.value,
-                clockBackgroundColor = Color.Black,
-                clockHandColor = Color.White
+                clockBackgroundColor = if (isNights.value[1]) Color.Black else Color.White,
+                clockHandColor = if (isNights.value[1]) Color.White else Color.Black
             )
             ClockItem(
+                modifier = Modifier.weight(1f),
                 timeInDigital = uaeDigitalTime.value,
                 place = "UAE",
                 time = uaeTime.value,
+                clockBackgroundColor = if (isNights.value[2]) Color.Black else Color.White,
+                clockHandColor = if (isNights.value[2]) Color.White else Color.Black
             )
             ClockItem(
+                modifier = Modifier.weight(1f),
                 timeInDigital = colDigitalTime.value,
                 place = "COL",
                 time = colTime.value,
-                clockBackgroundColor = Color.Black,
-                clockHandColor = Color.White
+                clockBackgroundColor = if (isNights.value[3]) Color.Black else Color.White,
+                clockHandColor = if (isNights.value[3]) Color.White else Color.Black
             )
         }
     }
@@ -156,11 +176,11 @@ fun ClockItem(
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = modifier.padding(start = 1.dp, end = 1.dp, top = 5.dp, bottom = 10.dp)
         ) {
             with(time) {
                 Clock(
-                    circleRadius = 90f,
+                    modifier = Modifier.padding(top = 10.dp),
+                    circleRadius = 100f,
                     time = Time(seconds, minute, hour),
                     backgroundColor = clockBackgroundColor,
                     clockHandColor = clockHandColor
@@ -170,13 +190,13 @@ fun ClockItem(
                     text = timeInDigital,
                     fontSize = 16.sp,
                     color = Color.White,
-                    modifier = Modifier.padding(top = 5.dp)
+                    modifier = Modifier.padding(top = 10.dp)
                 )
                 Text(
                     text = place,
                     fontSize = 12.sp,
                     color = Color.White,
-                    modifier = Modifier.padding(top = 3.dp)
+                    modifier = Modifier.padding(top = 5.dp)
                 )
             }
         }
@@ -197,7 +217,7 @@ fun Clock(
         contentAlignment = Alignment.Center
     ) {
         Canvas(
-            modifier = Modifier.size(70.dp)
+            modifier = modifier.size(70.dp)
         ) {
             val canvasWidth = size.width
             val canvasHeight = size.height
@@ -242,8 +262,12 @@ fun Clock(
                         x = circleCenter.value.x,
                         y = circleCenter.value.y + lineLength,
                     )
-                    val secondHandStart = when(clockHand){
-                        ClockHand.SECONDS -> Offset(x = circleCenter.value.x, y = circleCenter.value.y / 2 + 40)
+                    val secondHandStart = when (clockHand) {
+                        ClockHand.SECONDS -> Offset(
+                            x = circleCenter.value.x,
+                            y = circleCenter.value.y / 2 + 40
+                        )
+
                         ClockHand.MINUTES -> start
                         ClockHand.HOURS -> start
                     }
@@ -273,6 +297,39 @@ fun Clock(
                 center = circleCenter.value
             )
         }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun Screen() {
+    Surface {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 10.dp)
+        ) {
+            ClockWidget()
+        }
+    }
+}
+
+fun isNight(timeZone: String): Boolean {
+    // Define the start and end of night
+    val nightStart = LocalTime.of(19, 0) // 7:00 PM
+    val nightEnd = LocalTime.of(6, 0)    // 6:00 AM
+
+    // Get the current time from ZonedDateTime
+    val currentTime = ZonedDateTime.now(ZoneId.of(timeZone)).toLocalTime()
+
+    // Check if current time is during the night period
+    return if (nightStart.isBefore(nightEnd)) {
+        // When the night period is within the same day (e.g., 7:00 PM to 11:59 PM)
+        currentTime.isAfter(nightStart) && currentTime.isBefore(nightEnd)
+    } else {
+        // When the night period spans midnight (e.g., 7:00 PM to 6:00 AM)
+        currentTime.isAfter(nightStart) || currentTime.isBefore(nightEnd)
     }
 }
 
@@ -313,4 +370,10 @@ fun ClockPreview() {
 @Composable
 fun ClockWidgetPreview() {
     ClockWidget()
+}
+
+@Preview(device = "id:pixel_2")
+@Composable
+fun ScreenPreview() {
+    Screen()
 }
