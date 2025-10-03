@@ -24,13 +24,6 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             CalculatorTheme {
-              //  CalculatorScreen()
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.fillMaxSize().padding(top = 10.dp)
-                ) {
-                    ClockWidget()
-                }
             }
         }
     }
