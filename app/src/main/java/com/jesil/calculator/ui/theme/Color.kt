@@ -13,7 +13,7 @@ val Pink40 = Color(0xFF7D5260)
 
 val White = Color(0xFFFFFFFF)
 val Black = Color(0xFF000000)
-val MediumTurquoise = Color(0xFF48D1CC)
+val MediumTurquoise = Color(0xFFC2EEEB)
 val LargoTeal = Color(0xFF23988e)
 val LightGray = Color(0xFFededed)
 val MidNightGreen = Color(0xFF0b3e41)
