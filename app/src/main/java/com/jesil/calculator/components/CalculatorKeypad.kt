@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.sp
 import com.jesil.calculator.action.CalculatorAction
 import com.jesil.calculator.ui.theme.CalculatorTheme
 import com.jesil.calculator.ui.theme.DarkGray
@@ -32,7 +33,8 @@ fun CalculatorKeypad(
                 onClearClick = { calculatorActions(CalculatorAction.OnClear) },
                 onPlusOrMinusClick = { calculatorActions(CalculatorAction.OnPlusOrMinus) },
                 onPercentClick = { calculatorActions(CalculatorAction.OnPercent) },
-                onAddClick = { calculatorActions(CalculatorAction.OnAdd) }
+                onAddClick = { calculatorActions(CalculatorAction.OnAdd) },
+                onLongClick = { calculatorActions(CalculatorAction.OnClearAll) }
             )
             SecondRow(
                 modifier = Modifier.weight(1f),
@@ -71,7 +73,8 @@ fun FirstRow(
     onClearClick: () -> Unit,
     onPlusOrMinusClick: () -> Unit,
     onPercentClick: () -> Unit,
-    onAddClick: () -> Unit
+    onAddClick: () -> Unit,
+    onLongClick: () -> Unit = {}
 ) {
     val backgroundColor = if (isSystemInDarkTheme()) DarkGray else LightGray
     Row(
@@ -82,17 +85,20 @@ fun FirstRow(
                 modifier = Modifier.weight(1f),
                 symbol = "C",
                 onClick = onClearClick,
+                onLongClick = onLongClick,
                 backgroundColor = backgroundColor
             )
             CalcButton(
                 modifier = Modifier.weight(1f),
                 symbol = "±",
+                textFontSize = 30.sp,
                 onClick = onPlusOrMinusClick,
                 backgroundColor = backgroundColor
             )
             CalcButton(
                 modifier = Modifier.weight(1f),
                 symbol = "%",
+                textFontSize = 30.sp,
                 onClick = onPercentClick,
                 backgroundColor = backgroundColor
             )
@@ -101,6 +107,7 @@ fun FirstRow(
                     .background(Color.Black)
                     .weight(1f),
                 symbol = "+",
+                textFontSize = 40.sp,
                 onClick = onAddClick,
                 backgroundColor = MaterialTheme.colorScheme.primary
             )
@@ -142,7 +149,8 @@ fun SecondRow(
             )
             CalcButton(
                 modifier = Modifier.weight(1f),
-                symbol = "-",
+                symbol = "—",
+                textFontSize = 40.sp,
                 onClick = onSubtractClick,
                 backgroundColor = MaterialTheme.colorScheme.primary
             )
@@ -184,6 +192,7 @@ fun ThirdRow(
             CalcButton(
                 modifier = Modifier.weight(1f),
                 symbol = "×",
+                textFontSize = 40.sp,
                 onClick = onMultiplyClick,
                 backgroundColor = MaterialTheme.colorScheme.primary
             )
@@ -225,6 +234,7 @@ fun FourthRow(
             CalcButton(
                 modifier = Modifier.weight(1f),
                 symbol = "/",
+                textFontSize = 35.sp,
                 onClick = onDivideClick,
                 backgroundColor = MaterialTheme.colorScheme.primary
             )
@@ -261,6 +271,8 @@ fun FifthRow(
                 modifier = Modifier.weight(1f),
                 symbol = "=",
                 onClick = onEqualsClick,
+                textFontSize = 50.sp,
+                textColor = Color.White,
                 backgroundColor = actionColor
             )
         }

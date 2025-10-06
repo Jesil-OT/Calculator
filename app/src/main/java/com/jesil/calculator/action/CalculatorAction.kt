@@ -2,6 +2,7 @@ package com.jesil.calculator.action
 
 sealed interface CalculatorAction {
     data object OnClear: CalculatorAction
+    data object OnClearAll: CalculatorAction
     data object OnPlusOrMinus: CalculatorAction
     data object OnPercent: CalculatorAction
     data object OnAdd: CalculatorAction
