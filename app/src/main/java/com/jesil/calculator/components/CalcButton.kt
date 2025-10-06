@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,16 +26,16 @@ import com.jesil.calculator.ui.theme.LightGray
 fun CalcButton(
     modifier: Modifier = Modifier,
     symbol: String,
+    backgroundColor: Color,
     onClick: () -> Unit
 ) {
-    val backgroundColor = if (isSystemInDarkTheme()) DarkGray else LightGray
     val borderColor = if (isSystemInDarkTheme()) Black else DarkGray
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(color = backgroundColor)
             .border(
-                width = 2.dp,
+                width = .5.dp,
                 color = borderColor
             )
             .clickable(
@@ -48,7 +49,7 @@ fun CalcButton(
                 text = symbol,
                 style = MaterialTheme.typography.bodySmall.copy(
                     color = MaterialTheme.colorScheme.onPrimary,
-                    fontSize = 24.sp
+                    fontSize = 30.sp
                 ),
             )
         }
@@ -59,6 +60,8 @@ fun CalcButton(
 @Composable
 private fun CalcButtonPreview() {
     CalculatorTheme {
-        CalcButton(symbol = "1", onClick = {})
+        val backgroundColor = if (isSystemInDarkTheme()) DarkGray else LightGray
+
+        CalcButton(symbol = "1", onClick = {}, backgroundColor = backgroundColor)
     }
 }
