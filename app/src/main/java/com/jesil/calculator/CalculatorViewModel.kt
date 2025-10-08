@@ -1,25 +1,32 @@
 package com.jesil.calculator
 
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.jesil.calculator.action.CalculatorAction
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import org.mozilla.javascript.Context
 
 class CalculatorViewModel : ViewModel() {
     private val _expression = MutableStateFlow("")
     val expression: MutableStateFlow<String> = _expression
 
-    private val _answer = MutableStateFlow("")
-    val answer: MutableStateFlow<String> = _answer
+    val answer = _expression.map {
+        calculateResult(it)
+    }.stateIn(
+        scope = viewModelScope,
+        started =  SharingStarted.Eagerly,
+        initialValue = ""
+    )
 
     fun onCalculatorButtonAction(action: CalculatorAction) {
         when (action) {
             is CalculatorAction.OnClear -> onClear()
             is CalculatorAction.OnClearAll -> onClearAll()
             is CalculatorAction.OnPlusOrMinus -> onPlusOrMinusClick()
-            is CalculatorAction.OnPercent -> {}
+            is CalculatorAction.OnPercent -> onOperatorClick("%")
 
             is CalculatorAction.OnAdd -> onOperatorClick("+")
             is CalculatorAction.OnSubtract -> onOperatorClick("-")
@@ -37,14 +44,13 @@ class CalculatorViewModel : ViewModel() {
             is CalculatorAction.OnEight -> onNumberClick("8")
             is CalculatorAction.OnNine -> onNumberClick("9")
 
-            is CalculatorAction.OnDecimal -> onNumberClick(".")
-            is CalculatorAction.OnEquals -> buttonClicked("=")
-
+            is CalculatorAction.OnDecimal -> onDecimalClicked()
+            is CalculatorAction.OnEquals -> onEqualToClicked()
         }
     }
 
     private fun onOperatorClick(newOperator: String) {
-        val operators = listOf("+", "-", "×", "/")
+        val operators = listOf("+", "-", "×", "/", "%")
         val current = _expression.value
 
         if (current.isEmpty()) return
@@ -62,6 +68,27 @@ class CalculatorViewModel : ViewModel() {
         }
     }
 
+    private fun onDecimalClicked(){
+        val equation = _expression.value
+        // Split the expression by operators to get the last number
+        val lastNumber = equation.split("+", "-", "×", "*", "/").lastOrNull() ?: ""
+
+        when {
+            equation.isEmpty() -> {
+                // Case 1: nothing yet — start with "0."
+                _expression.value = "0."
+            }
+            lastNumber.contains(".") -> {
+                // Case 2: current number already has a dot — ignore
+                return
+            }
+            else -> {
+                // Case 3: safe to add dot
+                _expression.value = "$equation."
+            }
+        }
+    }
+
     private fun onPlusOrMinusClick() {
         _expression.value.let {
             if (it.startsWith("-")) {
@@ -74,7 +101,7 @@ class CalculatorViewModel : ViewModel() {
         }
     }
 
-    private fun onClear(){
+    private fun onClear() {
         _expression.value.let {
             if (it.isNotEmpty()) {
                 _expression.value = it.substring(0, it.length - 1)
@@ -82,9 +109,8 @@ class CalculatorViewModel : ViewModel() {
         }
     }
 
-    private fun onClearAll(){
+    private fun onClearAll() {
         _expression.value = ""
-        _answer.value = ""
     }
 
     private fun onNumberClick(number: String) {
@@ -93,70 +119,42 @@ class CalculatorViewModel : ViewModel() {
         }
     }
 
-    private fun buttonClicked(symbol: String) {
-        _expression.value.let {
-
-            if (symbol == "±") {
-                if (it.startsWith("-")) {
-                    _expression.value = it.drop(1)
-                } else if (it != "0") {
-                    _expression.value = "-$it"
-                } else {
-                    _expression.value = it
-                }
-
-//                if (it.startsWith("-")) {
-//                    _expression.value = it.substring(1, it.length)
-//                    return
-//                }
-//                _expression.value = "-$it"
-//                return
-
-//                if (it.startsWith("-")) {
-//                    displayValue = displayValue.drop(1) // remove the minus
-//                } else if (displayValue != "0") {
-//                    displayValue = "-$displayValue" // add a minus in front
-//                }
-            }
-            if (symbol == "AC") {
-                _expression.value = ""
-                _answer.value = "0"
-                return
-            }
-            if (symbol == "x") {
-                _expression.value += "*"
-                return
-            }
-            if (symbol == "C") {
-                if (it.isNotEmpty()) {
-                    _expression.value = if (it == "0") "0" else it.substring(0, it.length - 1)
-                }
-                return
-            }
-            if (symbol == "=") {
-                _expression.value = _answer.value
-                return
-            }
-
-
-            try {
-                val result = calculateResult(_expression.value)
-                _answer.value = result
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-
+    private fun onEqualToClicked(){
+        _expression.value = calculateResult(_expression.value)
     }
 
     private fun calculateResult(equation: String): String {
-        val context = Context.enter()
-        context.optimizationLevel = -1
-        val scriptable = context.initStandardObjects()
-        var finalResult = context.evaluateString(scriptable, equation, "Javascript", 1, null)
-        if (finalResult.toString().endsWith(".0")) {
-            finalResult = finalResult.toString().replace(".0", "")
+        // Clean up the equation first — remove trailing operators
+        val cleanedEquation = equation
+            .replace("×", "*")
+            .replace("%", "/100")
+            .trimEnd('+', '-', '*', '/', '.')
+
+        // If empty after trimming, return empty string
+        if (cleanedEquation.isEmpty()) return ""
+
+        return try {
+            val context = Context.enter()
+            context.optimizationLevel = -1 // required for Android
+            val scope = context.initStandardObjects()
+
+            val result = context.evaluateString(scope, cleanedEquation, "JavaScript", 1, null)
+
+            // Check for undefined results
+            var output = if (result != Context.getUndefinedValue()) result.toString() else ""
+
+            // Remove ".0" if it's a whole number
+            if (output.endsWith(".0")) {
+                output = output.dropLast(2)
+            }
+
+            output
+        } catch (e: Exception) {
+            e.printStackTrace()
+            ""
+        } finally {
+            Context.exit()
         }
-        return finalResult.toString()
     }
+
 }

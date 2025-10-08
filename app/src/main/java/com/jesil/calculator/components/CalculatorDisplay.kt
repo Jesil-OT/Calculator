@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -24,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,12 +43,37 @@ fun CalculatorDisplay(
         contentAlignment = Alignment.BottomEnd,
         content = {
             Column {
-                ExpressionTextField(
-                    expression = expression,
-                )
+                AnswerTextField(answer = answer)
+                Spacer(modifier = Modifier.height(16.dp))
+                ExpressionTextField(expression = expression,)
             }
         }
     )
+}
+
+@Composable
+fun AnswerTextField(
+    modifier: Modifier = Modifier,
+    answer: String
+) {
+   Box(
+       modifier = modifier.fillMaxWidth(),
+       contentAlignment = Alignment.BottomEnd,
+       content = {
+           Text(
+               text = answer,
+               style = MaterialTheme.typography.bodyMedium.copy(
+                   color = MaterialTheme.colorScheme.primary,
+                   fontSize = 35.sp
+               ),
+               maxLines = 1,
+               modifier = Modifier
+                   .padding(end = 5.dp)
+                   .animateContentSize(),
+               textAlign = TextAlign.End
+           )
+       }
+   )
 }
 
 @Composable
@@ -64,7 +92,8 @@ fun ExpressionTextField(
         )
     )
     Row (
-        horizontalArrangement = Arrangement.Center,
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically,
         content = {
             Text(
@@ -75,7 +104,9 @@ fun ExpressionTextField(
                     fontSize = 90.sp
                 ),
                 maxLines = 1,
-                modifier = Modifier.padding(end = 5.dp).animateContentSize()
+                modifier = Modifier
+                    .padding(end = 5.dp)
+                    .animateContentSize()
             )
             //box for cursor
             Box(
