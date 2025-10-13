@@ -14,9 +14,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -27,9 +32,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jesil.calculator.action.CalculatorAction
 import com.jesil.calculator.components.CalculatorDisplay
 import com.jesil.calculator.components.CalculatorKeypad
+import com.jesil.calculator.history.CalculatorHistoryScreen
 import com.jesil.calculator.ui.theme.CalculatorTheme
 import com.jesil.calculator.ui.theme.LargoTeal
 import com.jesil.calculator.ui.theme.OtherLargoTeal
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,6 +45,9 @@ fun CalculatorScreen() {
     val viewModel: CalculatorViewModel = viewModel()
     val expression by viewModel.expression.collectAsState()
     val answer by viewModel.answer.collectAsState()
+    val sheetState = rememberModalBottomSheetState()
+    var showBottomSheet by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
     Scaffold(
         topBar = {
             TopAppBar(
@@ -59,7 +69,9 @@ fun CalculatorScreen() {
                 },
                 actions = {
                     IconButton(
-                        onClick = {},
+                        onClick = {
+                            showBottomSheet = true
+                        },
                         content = {
                             Icon(
                                 tint = iconTint,
@@ -73,10 +85,23 @@ fun CalculatorScreen() {
         },
         content = { innerPadding ->
             CalculatorInnerScreen(
+                modifier = Modifier.padding(innerPadding),
                 expression = expression,
                 answer = answer,
                 onCalculatorButtonAction = viewModel::onCalculatorButtonAction
             )
+            if (showBottomSheet) {
+                CalculatorHistoryScreen(
+                    onDismiss = {
+                        coroutineScope.launch { sheetState.hide() }.invokeOnCompletion {
+                            if (!sheetState.isVisible) {
+                                showBottomSheet = false
+                            }
+                        }
+                    },
+                    sheetState = sheetState
+                )
+            }
         }
     )
 }
@@ -99,7 +124,7 @@ fun CalculatorInnerScreen(
                 expression = expression,
                 answer = answer,
                 modifier = Modifier
-                    .weight(.7f)
+                    .weight(.5f)
                     .padding(horizontal = 16.dp, vertical = 32.dp)
             )
             CalculatorKeypad(
