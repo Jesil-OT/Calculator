@@ -1,6 +1,11 @@
 package com.jesil.calculator.history
 
 import android.util.Log
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,10 +22,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -36,7 +45,16 @@ fun CalculatorHistoryScreen(
     sheetState: SheetState
 ) {
     val history = remember { mutableListOf(emptyList<HistoryModel>()) }
-    var hasExpandedState = remember { false }
+    var hasExpandedState by remember { mutableStateOf(false) }
+
+    val targetFraction by animateFloatAsState(
+        targetValue = if (hasExpandedState) 1f else 0.4f,
+        animationSpec = if (hasExpandedState) {
+            tween(durationMillis = 300, easing = FastOutSlowInEasing)
+        } else {
+            tween(durationMillis = 300, easing = LinearOutSlowInEasing)
+        }
+    )
 
     ModalBottomSheet(
         modifier = modifier,
@@ -58,49 +76,29 @@ fun CalculatorHistoryScreen(
                         Text(text = "Done")
                     }
                 )
-                when(hasExpandedState) {
-                    true -> Box(
-                        modifier = Modifier
-                            .fillMaxSize(.5f)
-                            .background(MaterialTheme.colorScheme.background),
-                        contentAlignment = Alignment.Center,
-                        content = {
-                            NoHistoryDisplay()
-                        }
-                    )
-                    false -> NoHistoryDisplay(modifier.weight(1f))
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize(targetFraction)
+                        .animateContentSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    NoHistoryDisplay()
                 }
             }
         )
-        LaunchedEffect(sheetState.targetValue.ordinal) {
-            when (sheetState.targetValue.ordinal) {
-                1 -> hasExpandedState = false
-                2 -> hasExpandedState = true
+        LaunchedEffect(sheetState.targetValue) {
+            hasExpandedState = when (sheetState.targetValue) {
+                SheetValue.Expanded -> true
+                SheetValue.PartiallyExpanded -> false
+                SheetValue.Hidden -> false
             }
-            Log.e(
-                "CalculatorHistoryScreen",
-                "launched Effect: Launched!!"
-            )
         }
     }
-//    Log.e(
-//        "CalculatorHistoryScreen",
-//        "sheetState.hasPartiallyExpandedState: ${sheetState.hasPartiallyExpandedState}"
-//    )
-    Log.e(
-        "CalculatorHistoryScreen",
-        "sheetState.The sheet is now expanded: $hasExpandedState"
-    )
-    Log.e(
-        "CalculatorHistoryScreen",
-        "sheetState targetValue : ${sheetState.targetValue.ordinal}"
-    )
 }
 
 @Composable
-fun NoHistoryDisplay(modifier: Modifier = Modifier) {
+fun NoHistoryDisplay() {
     Column(
-        modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         content = {
@@ -110,7 +108,7 @@ fun NoHistoryDisplay(modifier: Modifier = Modifier) {
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onBackground
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(10.dp))
             Text(
                 text = "No History",
                 style = MaterialTheme.typography.bodyMedium.copy(
