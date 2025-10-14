@@ -1,21 +1,22 @@
 package com.jesil.calculator.history
 
-import android.util.Log
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -44,7 +45,7 @@ fun CalculatorHistoryScreen(
     onDismiss: () -> Unit,
     sheetState: SheetState
 ) {
-    val history = remember { mutableListOf(emptyList<HistoryModel>()) }
+    val history = remember { mapOf<String, List<HistoryModel>>() }
     var hasExpandedState by remember { mutableStateOf(false) }
 
     val targetFraction by animateFloatAsState(
@@ -76,13 +77,43 @@ fun CalculatorHistoryScreen(
                         Text(text = "Done")
                     }
                 )
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize(targetFraction)
-                        .animateContentSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    NoHistoryDisplay()
+                when (fakeCalculationHistory.isNotEmpty()) {
+                    true ->
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(15.dp),
+                        ) {
+                            fakeCalculationHistory.forEach { (date, calculationHistories) ->
+                                item {
+                                    Text(
+                                        modifier = Modifier.padding(horizontal = 20.dp),
+                                        text = date,
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            color = MaterialTheme.colorScheme.onBackground
+                                        )
+                                    )
+                                }
+                                items(
+                                    items = calculationHistories,
+                                    itemContent = { calculationHistory ->
+                                        CalcHistoryItem(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            expression = calculationHistory.expression,
+                                            answer = calculationHistory.answer
+                                        )
+                                    }
+                                )
+                            }
+                        }
+
+                    else -> Box(
+                        modifier = Modifier
+                            .fillMaxSize(targetFraction)
+                            .animateContentSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        NoHistoryDisplay()
+                    }
                 }
             }
         )
@@ -118,3 +149,38 @@ fun NoHistoryDisplay() {
         }
     )
 }
+
+private val fakeCalculationHistory = mapOf<String, List<HistoryModel>>(
+   "2025-10-06" to listOf(
+       HistoryModel(
+           expression = "2+2",
+           answer = "4",
+           timeStamp = "10:00"
+       ),
+       HistoryModel(
+           expression = "2+2",
+           answer = "4",
+           timeStamp = "Today"
+       ),
+       HistoryModel(
+           expression = "3/5",
+           answer = "0.39791",
+           timeStamp = "Today"
+       ),
+       HistoryModel(
+           expression = "2+2",
+           answer = "4",
+           timeStamp = "Today"
+       ),
+       HistoryModel(
+           expression = "3/5+98-27",
+           answer = "0.39791",
+           timeStamp = "Today"
+       ),
+       HistoryModel(
+           expression = "2+2",
+           answer = "4",
+           timeStamp = "Today"
+       ),
+   )
+)
