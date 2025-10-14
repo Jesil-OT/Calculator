@@ -1,26 +1,36 @@
 package com.jesil.calculator.history
 
-import android.util.Log
-import androidx.compose.foundation.background
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -35,8 +45,17 @@ fun CalculatorHistoryScreen(
     onDismiss: () -> Unit,
     sheetState: SheetState
 ) {
-    val history = remember { mutableListOf(emptyList<HistoryModel>()) }
-    var hasExpandedState = remember { false }
+    val history = remember { mapOf<String, List<HistoryModel>>() }
+    var hasExpandedState by remember { mutableStateOf(false) }
+
+    val targetFraction by animateFloatAsState(
+        targetValue = if (hasExpandedState) 1f else 0.4f,
+        animationSpec = if (hasExpandedState) {
+            tween(durationMillis = 300, easing = FastOutSlowInEasing)
+        } else {
+            tween(durationMillis = 300, easing = LinearOutSlowInEasing)
+        }
+    )
 
     ModalBottomSheet(
         modifier = modifier,
@@ -58,49 +77,59 @@ fun CalculatorHistoryScreen(
                         Text(text = "Done")
                     }
                 )
-                when(hasExpandedState) {
-                    true -> Box(
-                        modifier = Modifier
-                            .fillMaxSize(.5f)
-                            .background(MaterialTheme.colorScheme.background),
-                        contentAlignment = Alignment.Center,
-                        content = {
-                            NoHistoryDisplay()
+                when (fakeCalculationHistory.isNotEmpty()) {
+                    true ->
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(15.dp),
+                        ) {
+                            fakeCalculationHistory.forEach { (date, calculationHistories) ->
+                                item {
+                                    Text(
+                                        modifier = Modifier.padding(horizontal = 20.dp),
+                                        text = date,
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            color = MaterialTheme.colorScheme.onBackground
+                                        )
+                                    )
+                                }
+                                items(
+                                    items = calculationHistories,
+                                    itemContent = { calculationHistory ->
+                                        CalcHistoryItem(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            expression = calculationHistory.expression,
+                                            answer = calculationHistory.answer
+                                        )
+                                    }
+                                )
+                            }
                         }
-                    )
-                    false -> NoHistoryDisplay(modifier.weight(1f))
+
+                    else -> Box(
+                        modifier = Modifier
+                            .fillMaxSize(targetFraction)
+                            .animateContentSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        NoHistoryDisplay()
+                    }
                 }
             }
         )
-        LaunchedEffect(sheetState.targetValue.ordinal) {
-            when (sheetState.targetValue.ordinal) {
-                1 -> hasExpandedState = false
-                2 -> hasExpandedState = true
+        LaunchedEffect(sheetState.targetValue) {
+            hasExpandedState = when (sheetState.targetValue) {
+                SheetValue.Expanded -> true
+                SheetValue.PartiallyExpanded -> false
+                SheetValue.Hidden -> false
             }
-            Log.e(
-                "CalculatorHistoryScreen",
-                "launched Effect: Launched!!"
-            )
         }
     }
-//    Log.e(
-//        "CalculatorHistoryScreen",
-//        "sheetState.hasPartiallyExpandedState: ${sheetState.hasPartiallyExpandedState}"
-//    )
-    Log.e(
-        "CalculatorHistoryScreen",
-        "sheetState.The sheet is now expanded: $hasExpandedState"
-    )
-    Log.e(
-        "CalculatorHistoryScreen",
-        "sheetState targetValue : ${sheetState.targetValue.ordinal}"
-    )
 }
 
 @Composable
-fun NoHistoryDisplay(modifier: Modifier = Modifier) {
+fun NoHistoryDisplay() {
     Column(
-        modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         content = {
@@ -110,7 +139,7 @@ fun NoHistoryDisplay(modifier: Modifier = Modifier) {
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onBackground
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(10.dp))
             Text(
                 text = "No History",
                 style = MaterialTheme.typography.bodyMedium.copy(
@@ -120,3 +149,38 @@ fun NoHistoryDisplay(modifier: Modifier = Modifier) {
         }
     )
 }
+
+private val fakeCalculationHistory = mapOf<String, List<HistoryModel>>(
+   "2025-10-06" to listOf(
+       HistoryModel(
+           expression = "2+2",
+           answer = "4",
+           timeStamp = "10:00"
+       ),
+       HistoryModel(
+           expression = "2+2",
+           answer = "4",
+           timeStamp = "Today"
+       ),
+       HistoryModel(
+           expression = "3/5",
+           answer = "0.39791",
+           timeStamp = "Today"
+       ),
+       HistoryModel(
+           expression = "2+2",
+           answer = "4",
+           timeStamp = "Today"
+       ),
+       HistoryModel(
+           expression = "3/5+98-27",
+           answer = "0.39791",
+           timeStamp = "Today"
+       ),
+       HistoryModel(
+           expression = "2+2",
+           answer = "4",
+           timeStamp = "Today"
+       ),
+   )
+)
