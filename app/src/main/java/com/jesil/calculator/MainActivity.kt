@@ -10,14 +10,18 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBar
 import androidx.compose.ui.Modifier
 import com.jesil.calculator.ui.theme.CalculatorTheme
+import org.koin.androidx.compose.KoinAndroidContext
+import org.koin.compose.KoinContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            CalculatorTheme {
-                CalculatorScreen()
+            KoinAndroidContext {
+                CalculatorTheme {
+                    CalculatorScreen()
+                }
             }
         }
     }

@@ -37,16 +37,23 @@ import com.jesil.calculator.ui.theme.CalculatorTheme
 import com.jesil.calculator.ui.theme.LargoTeal
 import com.jesil.calculator.ui.theme.OtherLargoTeal
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalculatorScreen() {
     val iconTint = if (isSystemInDarkTheme()) LargoTeal else OtherLargoTeal
-    val viewModel: CalculatorViewModel = viewModel()
+
+    val viewModel: CalculatorViewModel = koinViewModel()
+
     val expression by viewModel.expression.collectAsState()
+
     val answer by viewModel.answer.collectAsState()
+
     val sheetState = rememberModalBottomSheetState()
+
     var showBottomSheet by remember { mutableStateOf(false) }
+
     val coroutineScope = rememberCoroutineScope()
     Scaffold(
         topBar = {
