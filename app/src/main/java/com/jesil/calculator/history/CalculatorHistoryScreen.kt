@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -27,6 +26,7 @@ import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import com.jesil.calculator.R
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,8 +46,11 @@ fun CalculatorHistoryScreen(
     onDismiss: () -> Unit,
     sheetState: SheetState
 ) {
-    val history = remember { mapOf<String, List<HistoryModel>>() }
     var hasExpandedState by remember { mutableStateOf(false) }
+
+    val viewModel : CalculatorHistoryViewModel = koinViewModel()
+
+    val calculationHistory by viewModel.history.collectAsState()
 
     val targetFraction by animateFloatAsState(
         targetValue = if (hasExpandedState) 1f else 0.4f,
@@ -77,17 +81,17 @@ fun CalculatorHistoryScreen(
                         Text(text = "Done")
                     }
                 )
-                when (fakeCalculationHistory.isNotEmpty()) {
+                when (calculationHistory.isNotEmpty()) {
                     true ->
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
                             verticalArrangement = Arrangement.spacedBy(15.dp),
                         ) {
-                            fakeCalculationHistory.forEach { (date, calculationHistories) ->
+                            calculationHistory.forEach { (date, calculationHistories) ->
                                 item {
                                     Text(
                                         modifier = Modifier.padding(horizontal = 20.dp),
-                                        text = date,
+                                        text = viewModel.getFormattedDateLabel(date),
                                         style = MaterialTheme.typography.bodyMedium.copy(
                                             color = MaterialTheme.colorScheme.onBackground
                                         )
@@ -150,37 +154,31 @@ fun NoHistoryDisplay() {
     )
 }
 
-private val fakeCalculationHistory = mapOf<String, List<HistoryModel>>(
-   "2025-10-06" to listOf(
-       HistoryModel(
+private val fakeCalculationHistory: Map<String, List<CalculatorHistoryModel>> = mapOf(
+   "Today" to listOf(
+       CalculatorHistoryModel(
            expression = "2+2",
            answer = "4",
-           timeStamp = "10:00"
        ),
-       HistoryModel(
+       CalculatorHistoryModel(
            expression = "2+2",
            answer = "4",
-           timeStamp = "Today"
        ),
-       HistoryModel(
+       CalculatorHistoryModel(
            expression = "3/5",
            answer = "0.39791",
-           timeStamp = "Today"
        ),
-       HistoryModel(
+       CalculatorHistoryModel(
            expression = "2+2",
            answer = "4",
-           timeStamp = "Today"
        ),
-       HistoryModel(
+       CalculatorHistoryModel(
            expression = "3/5+98-27",
            answer = "0.39791",
-           timeStamp = "Today"
        ),
-       HistoryModel(
+       CalculatorHistoryModel(
            expression = "2+2",
            answer = "4",
-           timeStamp = "Today"
        ),
    )
 )

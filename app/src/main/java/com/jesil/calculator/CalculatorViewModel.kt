@@ -1,15 +1,24 @@
 package com.jesil.calculator
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jesil.calculator.action.CalculatorAction
+import com.jesil.calculator.data.local.CalculatorDao
+import com.jesil.calculator.data.repo.CalculatorRepository
+import com.jesil.calculator.history.CalculatorHistoryModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import org.mozilla.javascript.Context
 
-class CalculatorViewModel : ViewModel() {
+const val TAG = "CalculatorViewModel"
+class CalculatorViewModel(
+
+    private val calculatorRepository: CalculatorRepository
+) : ViewModel() {
     private val _expression = MutableStateFlow("")
     val expression: MutableStateFlow<String> = _expression
 
@@ -120,6 +129,18 @@ class CalculatorViewModel : ViewModel() {
     }
 
     private fun onEqualToClicked(){
+        viewModelScope.launch {
+            calculatorRepository.insertCalculationHistory(
+                CalculatorHistoryModel(
+                    expression = _expression.value,
+                    answer = answer.value
+                )
+            )
+            Log.d(TAG, "onEqualToClicked: insert complete: ${CalculatorHistoryModel(
+                expression = _expression.value,
+                answer = answer.value
+            )}")
+        }
         _expression.value = calculateResult(_expression.value)
     }
 

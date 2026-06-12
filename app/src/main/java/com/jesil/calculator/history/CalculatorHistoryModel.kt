@@ -1,7 +1,7 @@
 package com.jesil.calculator.history
 
-data class HistoryModel(
+data class CalculatorHistoryModel(
     val expression: String,
     val answer: String,
-    val timeStamp: String
+    val date: Long = System.currentTimeMillis(),
 )

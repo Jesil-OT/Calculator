@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+    alias(libs.plugins.compose.compiler)
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -68,7 +70,11 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.rhino)
+    implementation(libs.koin.androidx.compose)
+    implementation(libs.koin.android)
+    implementation(libs.androidx.room.runtime)
     implementation("androidx.compose.runtime:runtime-livedata:1.6.8")
     implementation("androidx.compose.runtime:runtime-rxjava2:1.6.8")
+    ksp("androidx.room:room-compiler:2.5.0")
 
 }
